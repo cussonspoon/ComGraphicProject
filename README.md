@@ -1,4 +1,4 @@
-### Mini Game 2 - Visual Upgrade (Space Shooter)
+# Mini Game 2 - Visual Upgrade (Space Shooter)
 
 ## Build / Run Instructions
 Ensure you have Python installed.
