@@ -1,27 +1,16 @@
 from OpenGL.GL import *
-import math
+from logic.obj_loader import OBJ 
 
-class WireframeShip:
+class SpaceShip:
     def __init__(self):
-        # "Viper" Shape
-        self.vertices = [
-            (0.0, 0.0, -2.0),  # Nose
-            (-0.5, 0.0, 0.0), (0.5, 0.0, 0.0), # Wings Start
-            (0.0, 0.5, 0.0),   # Cockpit Top
-            (-1.5, -0.2, 1.0), (1.5, -0.2, 1.0), # Wing Tips
-            (0.0, -0.2, 1.0),  # Engine
-            (0.0, 0.5, 1.0),   # Tail
-        ]
-        
-        self.edges = [
-            (0,1), (0,2), (0,3), (1,3), (2,3), (1,2),
-            (1,4), (4,6), (6,1), (2,5), (5,6), (6,2),
-            (3,7), (6,7), (4,5)
-        ]
+        # Your custom models are back!
+        self.hull_model = OBJ("assets/ship.obj", flat_normals=True)
+        self.glass_model = OBJ("assets/glass.obj", flat_normals=True)
+        self.led_model = OBJ("assets/leds.obj", flat_normals=True) 
         
         self.x = 0.0
         self.y = 0.0
-        self.z = -5.0 # Logic Z
+        self.z = -5.0 
         self.bank_angle = 0.0
         self.sensitivity = 0.01
         
@@ -29,7 +18,7 @@ class WireframeShip:
         self.green_on = False
         self.blue_on = False
 
-        self.skill_cooldown_max = 600  # 10 seconds (at 60 FPS)
+        self.skill_cooldown_max = 600  
         self.skill_timer = 0
 
     def get_current_color(self):
@@ -37,11 +26,9 @@ class WireframeShip:
         g = 1.0 if self.green_on else 0.0
         b = 1.0 if self.blue_on else 0.0
         
-        # Determine if White (just for fallback visual logic if needed)
         if r == 0 and g == 0 and b == 0:
-            return (1.0, 1.0, 1.0, 0) # Default White, BUT Flag is 0
+            return (1.0, 1.0, 1.0, 0)
             
-        # ALWAYS return 0 for the 4th value (Normal Shot)
         return (r, g, b, 0)
 
     def update(self, mouse_dx, mouse_dy):
@@ -56,25 +43,49 @@ class WireframeShip:
     def draw(self):
         glPushMatrix()
         
-        # --- FPS COCKPIT OFFSET ---
-        # 1. Move to the ship's world position (so it stays with the camera)
-        # 2. Move 'down' (-0.5) so it looks like a dashboard
-        # 3. Move 'forward' (-1.5) so the nose sticks out in front of us
-        glTranslatef(self.x, self.y - 0.5, -1.5) 
-        
-        # TILT: We rotate ONLY the model, not the camera, to simulate banking
+        glTranslatef(self.x, self.y - 1.5, -4.0) 
         glRotatef(-self.bank_angle * 30.0, 0, 0, 1)
-        
-        # Scale it so it doesn't block the whole screen
         glScalef(0.4, 0.4, 0.4) 
 
-        glBegin(GL_LINES)
+        # Enable Color Material for fail-safe diffuse rendering on the .obj files
+        glEnable(GL_COLOR_MATERIAL)
+        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+
+        # ==========================================
+        # 1. THE HULL (Highly Reflective Chrome)
+        # ==========================================
+        glColor3f(0.8, 0.8, 0.8) 
+        specular_array = (GLfloat * 4)(1.0, 1.0, 1.0, 1.0)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular_array) 
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64.0) 
         
-        current_color = self.get_current_color()
-        glColor3f(current_color[0], current_color[1], current_color[2])
+        self.hull_model.draw()
+
+        # ==========================================
+        # 2. THE GLASS (Clear Transparent Glass)
+        # ==========================================
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDepthMask(GL_FALSE)
+
+        glColor4f(0.3, 0.6, 1.0, 0.5)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular_array)
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 100.0) 
         
-        for e in self.edges:
-            for v in e:
-                glVertex3fv(self.vertices[v])
-        glEnd()
+        self.glass_model.draw()
+
+        glDepthMask(GL_TRUE)
+        glDisable(GL_BLEND)
+        
+        # ==========================================
+        # 3. THE LED WEAPON INDICATORS (Glowing)
+        # ==========================================
+        glDisable(GL_LIGHTING)
+    
+        color = self.get_current_color()
+        glColor3f(color[0], color[1], color[2])
+        self.led_model.draw()
+        
+        glEnable(GL_LIGHTING)
+        
         glPopMatrix()

@@ -16,7 +16,7 @@ class Interface:
         glRasterPos2i(x, y)
         glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
 
-    def draw(self, display_size, score, lives, skill_timer, skill_max):
+    def draw(self, display_size, score, lives, skill_timer, skill_max, fps, sun_intensity):
         """
         Draws the 2D Overlay: Crosshair, HUD, and Skill Bar.
         """
@@ -49,11 +49,11 @@ class Interface:
         glEnd()
         glLineWidth(1.0)
 
-        # 2. SKILL BAR (Bottom Center)
+        # 2. SKILL BAR (Top Center)
         bar_width = 200
         bar_height = 20
         bx = cx - (bar_width // 2)
-        by = 50 # Position from bottom
+        by = height - 80 # Position from top
         
         # Calculate Fill
         if skill_timer <= 0:
@@ -87,9 +87,11 @@ class Interface:
         # Draw Skill Label
         self.draw_text_gl(bx, by + 25, label)
 
-        # 3. HUD TEXT (Score & Lives)
+        # 3. HUD TEXT (Score & Lives & FPS & Sun)
         self.draw_text_gl(10, height - 40, f"Score: {score}")
         self.draw_text_gl(10, height - 80, f"Lives: {lives}")
+        self.draw_text_gl(10, height - 120, f"FPS: {int(fps)}")
+        self.draw_text_gl(10, height - 160, f"Time of Day: {sun_intensity:.2f}")
 
         # --- Restore 3D Projection ---
         glDisable(GL_BLEND)

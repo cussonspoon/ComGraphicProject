@@ -1,18 +1,11 @@
 import random
 from OpenGL.GL import *
+from logic.obj_loader import OBJ
 
 class Asteroid:
     def __init__(self, start_z=-50.0):
-        # --- Geometry (Wireframe Cube) ---
-        self.vertices = [
-            (-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1),
-            (-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1)
-        ]
-        self.edges = [
-            (0,1), (1,2), (2,3), (3,0),
-            (4,5), (5,6), (6,7), (7,4),
-            (0,4), (1,5), (2,6), (3,7)
-        ]
+        # --- Geometry ---
+        self.model = OBJ("assets/asteriod.obj")
 
         # --- Movement Properties ---
         self.x = 0
@@ -65,16 +58,18 @@ class Asteroid:
         glRotatef(self.rot_x, 1, 0, 0)
         glRotatef(self.rot_y, 0, 1, 0)
         
-        glBegin(GL_LINES)
-        
+        # OPAQUE MATTE MATERIAL (Low spec, low shine)
         # VISUAL CUE: If invincible, use Grey. Otherwise, use normal color.
-        if is_invincible:
-            glColor3f(0.5, 0.5, 0.5) # Grey
-        else:
-            glColor3f(self.color[0], self.color[1], self.color[2])
-            
-        for e in self.edges:
-            for v in e:
-                glVertex3fv(self.vertices[v])
-        glEnd()
+        current_color = (0.5, 0.5, 0.5) if is_invincible else self.color
+        
+        glDisable(GL_COLOR_MATERIAL)
+        # Reduced ambient so they are black if the sun/headlight doesn't hit them
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, [0.01, 0.01, 0.01, 1.0])
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, [current_color[0], current_color[1], current_color[2], 1.0])
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.0, 0.0, 0.0, 1.0]) 
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.0)
+        
+        self.model.draw()
+        
+        glEnable(GL_COLOR_MATERIAL)
         glPopMatrix()

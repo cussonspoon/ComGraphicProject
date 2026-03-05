@@ -29,6 +29,9 @@ class InputHandler:
                 if event.key == pygame.K_e:
                     level.activate_skill()
 
+                if event.key == pygame.K_f:
+                    level.headlight.is_on = not level.headlight.is_on
+
         # 2. Continuous Input (Mouse)
         if not game_manager.is_game_over:
             mouse_dx, mouse_dy = pygame.mouse.get_rel()

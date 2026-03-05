@@ -1,23 +1,31 @@
 import random
-from objects.spaceship import WireframeShip
+from objects.spaceship import SpaceShip
 from objects.scenery import Star
 from objects.asteroid import Asteroid
 from objects.bullet import Bullet
 from objects.powerup import PowerUp
 from objects.missiles import Missile
-from objects.pylon import ShieldPylon # <--- NEW IMPORT
+from objects.sun import Sun # <--- NEW IMPORT
+from objects.moon import Moon # <--- NEW IMPORT
+from objects.headlight import Headlight
 
 class Level:
     def __init__(self):
-        self.ship = WireframeShip()
+        self.ship = SpaceShip()
         self.bullets = []
         self.asteroids = []
         self.stars = []
         self.powerups = []
         self.missiles = []
         
-        # The Non-Movable Object
-        self.pylon = ShieldPylon() # <--- NEW OBJECT
+        # --- NEW: Initialize and setup the Sun and Moon ---
+        self.sun = Sun()
+        self.sun.setup()
+        self.moon = Moon(self.sun)
+        self.moon.setup()
+        self.headlight = Headlight()
+        self.headlight.setup()
+        # -----------------------------------------
         
         self.spawn_objects()
 
@@ -32,7 +40,6 @@ class Level:
         # 3. PowerUps
         self.powerups.append(PowerUp())
 
-    # ... (Keep spawn_bullet and activate_skill same as before) ...
     def spawn_bullet(self):
         color = self.ship.get_current_color()
         self.bullets.append(Bullet(self.ship.x, self.ship.y - 0.5, -2.3, color))
@@ -51,11 +58,14 @@ class Level:
             target = None
             if len(sorted_asteroids) > 0: target = sorted_asteroids[i % len(sorted_asteroids)]
             self.missiles.append(Missile(self.ship.x, self.ship.y, self.ship.z, target, colors[i]))
-    # ----------------------------------------------------------------
 
     def update(self, mouse_dx, mouse_dy):
+        # --- NEW: Update the Day/Night cycle ---
+        self.sun.update()
+        self.moon.update()
+        # ---------------------------------------
+        
         self.ship.update(mouse_dx, mouse_dy)
-        self.pylon.update() # Updates timer/animation
         
         for a in self.asteroids: a.update()
         for s in self.stars: s.update()
@@ -67,53 +77,31 @@ class Level:
         for b in self.bullets:
             b.update()
             if not b.alive: continue
-            
-            # 1. Check Collision with PYLON first
-            p_dist = ((b.x - self.pylon.x)**2 + (b.y - self.pylon.y)**2 + (b.z - self.pylon.z)**2)**0.5
-            if p_dist < self.pylon.radius:
-                b.alive = False # Bullet hits pylon
-                self.pylon.hit() # Damage pylon
-                continue # Skip asteroid check for this bullet
 
             # 2. Check Collision with ASTEROIDS
             for a in self.asteroids:
-                # Radius collision
-                # Simple Sphere check
                 hit = ((b.x - a.x)**2 + (b.y - a.y)**2 + (b.z - a.z)**2)**0.5 < (b.radius + 2.0)
                 
                 if hit:
-                    b.alive = False # Bullet always dies on impact
-                    
-                    if self.pylon.active:
-                        # SHIELDED!
-                        print("SHIELD ACTIVE! Cannot destroy asteroid!")
-                        # Asteroid survives
+                    b.alive = False 
+                    is_rainbow = (len(b.color) > 3 and b.color[3] == 1)
+                    if is_rainbow or b.color[:3] == a.color[:3]:
+                        a.reset() 
                     else:
-                        # NORMAL LOGIC
-                        # Check Colors (or Rainbow)
-                        is_rainbow = (len(b.color) > 3 and b.color[3] == 1)
-                        if is_rainbow or b.color[:3] == a.color[:3]:
-                            a.reset() # Destroy Asteroid
-                        else:
-                            print("WRONG COLOR")
+                        print("WRONG COLOR")
                     break
 
         self.bullets = [b for b in self.bullets if b.alive]
 
     def draw(self):
-        # Draw Pylon First (Background)
-        self.pylon.draw()
+        # --- NEW: Apply the lighting to the scene first! ---
+        self.sun.draw()
+        self.moon.draw()
+        self.headlight.draw(self.ship.x, self.ship.y, self.ship.z, self.sun.intensity)
+        # ---------------------------------------------------
         
         for s in self.stars: s.draw()
-        
-        # Draw Asteroids
-        # (We pass the 'pylon.active' state to change their color if needed)
-        # Note: Since we didn't update Asteroid.draw to take arguments, 
-        # we can just draw them normally, but maybe overlay a shield effect?
-        # Or simply rely on the Pylon glowing to tell the player.
-        for a in self.asteroids: 
-            a.draw(is_invincible=self.pylon.active)
-        
+        for a in self.asteroids: a.draw(is_invincible=False)
         for p in self.powerups: p.draw()
         for m in self.missiles: m.draw()
         for b in self.bullets: b.draw()

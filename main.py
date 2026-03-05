@@ -18,16 +18,6 @@ def main():
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     
-    # Projection Setup
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(45, (display[0]/display[1]), 0.1, 500.0)
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-    
-    glClearColor(0.1, 0.1, 0.1, 1.0)
-    glEnable(GL_DEPTH_TEST)
-    
     # 2. SETUP MANAGERS
     level = Level()
     game_manager = GameManager()
@@ -44,33 +34,47 @@ def main():
 
         # --- B. LOGIC ---
         if not game_manager.is_game_over:
-            # FIX: We now pass 'level.missiles' as the last argument
             game_manager.update(
                 level.ship, 
                 level.asteroids, 
                 level.bullets, 
                 level.powerups, 
-                level.missiles  # <--- THIS WAS MISSING
+                level.missiles
             )
 
         # --- C. DRAWING ---
+        # 1. CLEAR EVERYTHING (Removed the glClearColor here so the Sun can control it!)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
+        # 2. FORCE 3D PROJECTION
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(45, (display[0]/display[1]), 0.1, 500.0)
+        
+        # 3. FORCE 3D MODELVIEW
+        glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
-        # FPS Camera (Locked to Ship)
+        # 4. FORCE CORE 3D STATES
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_LIGHTING)
+        
+        # 5. FPS Camera (Locked to Ship)
         gluLookAt(level.ship.x, level.ship.y, 0,
                   level.ship.x, level.ship.y, -100.0,
                   0, 1, 0)
         
-        # Draw World
+        # 6. Draw 3D World
         level.draw()
             
-        # Draw UI (Score, Lives, Skill Bar)
+        # 7. Draw 2D UI
         ui.draw(display, 
                 game_manager.score, 
                 game_manager.lives, 
                 level.ship.skill_timer, 
-                level.ship.skill_cooldown_max)
+                level.ship.skill_cooldown_max,
+                clock.get_fps(),
+                level.sun.intensity)
 
         pygame.display.flip()
         clock.tick(60)
