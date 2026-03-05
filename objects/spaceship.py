@@ -3,7 +3,6 @@ from logic.obj_loader import OBJ
 
 class SpaceShip:
     def __init__(self):
-        # Your custom models are back!
         self.hull_model = OBJ("assets/ship.obj", flat_normals=True)
         self.glass_model = OBJ("assets/glass.obj", flat_normals=True)
         self.led_model = OBJ("assets/leds.obj", flat_normals=True) 
@@ -43,37 +42,33 @@ class SpaceShip:
     def draw(self):
         glPushMatrix()
         
-        glTranslatef(self.x, self.y - 1.5, -4.0) 
+        # Base Ship Transformation
+        glTranslatef(self.x, self.y - 1.0, -3.0) 
+        glRotatef(15.0, 1, 0, 0) 
         glRotatef(-self.bank_angle * 30.0, 0, 0, 1)
         glScalef(0.4, 0.4, 0.4) 
 
-        # Enable Color Material for fail-safe diffuse rendering on the .obj files
         glEnable(GL_COLOR_MATERIAL)
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
 
         # ==========================================
         # 1. THE HULL (Polished Chrome / High Gloss)
         # ==========================================
-        # A bright, cool silver base 
         glColor3f(0.75, 0.75, 0.8) 
-        
-        # Blinding white specular highlight
         specular_array = (GLfloat * 4)(1.0, 1.0, 1.0, 1.0)
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular_array) 
-        
-        # Dropped from 128 down to 75 so the light spreads beautifully across the curves
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 75.0) 
         
         self.hull_model.draw()
 
         # ==========================================
-        # 2. THE GLASS (Clear Transparent Glass)
+        # 2. THE GLASS (Crystal Clear Transparency)
         # ==========================================
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDepthMask(GL_FALSE)
 
-        glColor4f(0.3, 0.6, 1.0, 0.5)
+        glColor4f(0.3, 0.6, 1.0, 0.15)
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular_array)
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 100.0) 
         
@@ -83,14 +78,24 @@ class SpaceShip:
         glDisable(GL_BLEND)
         
         # ==========================================
-        # 3. THE LED WEAPON INDICATORS (Glowing)
+        # 3. THE LED WEAPON INDICATORS (Diamond Beacon)
         # ==========================================
         glDisable(GL_LIGHTING)
-    
+        
+        glPushMatrix()
+        
+        # Placed perfectly on the Y=1.5 antenna tip. 
+        # (Lifted to 1.65 so the bottom of the diamond rests on the metal)
+        glTranslatef(0.0, 1.65, 2.0) 
+        
+        # Optional: Scale it down slightly if the diamond looks too chunky
+        glScalef(0.5, 0.5, 0.5) 
+        
         color = self.get_current_color()
         glColor3f(color[0], color[1], color[2])
         self.led_model.draw()
         
-        glEnable(GL_LIGHTING)
+        glPopMatrix() 
         
+        glEnable(GL_LIGHTING)
         glPopMatrix()

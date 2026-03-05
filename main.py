@@ -60,7 +60,7 @@ def main():
         glEnable(GL_LIGHTING)
         
         # 5. FPS Camera (Locked to Ship)
-        gluLookAt(level.ship.x, level.ship.y, 0,
+        gluLookAt(level.ship.x, level.ship.y, 0.0,  
                   level.ship.x, level.ship.y, -100.0,
                   0, 1, 0)
         
