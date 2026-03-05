@@ -52,12 +52,17 @@ class SpaceShip:
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
 
         # ==========================================
-        # 1. THE HULL (Highly Reflective Chrome)
+        # 1. THE HULL (Polished Chrome / High Gloss)
         # ==========================================
-        glColor3f(0.8, 0.8, 0.8) 
+        # A bright, cool silver base 
+        glColor3f(0.75, 0.75, 0.8) 
+        
+        # Blinding white specular highlight
         specular_array = (GLfloat * 4)(1.0, 1.0, 1.0, 1.0)
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular_array) 
-        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64.0) 
+        
+        # Dropped from 128 down to 75 so the light spreads beautifully across the curves
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 75.0) 
         
         self.hull_model.draw()
 
